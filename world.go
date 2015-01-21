@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
-	"math"
+	// "fmt"
 	"math/rand"
-	"sync"
 )
 
 type World struct {
@@ -12,36 +10,18 @@ type World struct {
 	bots     []Bot
 }
 
-type Location struct {
-	signatures map[string]int
-	neighbors  [8]*Location
-	food       int
-	x          int
-	y          int
-	lock       sync.RWMutex
-	nest       bool
-}
-
-func (loc *Location) print() {
-	fmt.Println(loc.x, loc.y, loc.food, loc.signatures, loc.nest)
-}
-
-type Direction struct {
-	degree int
-}
-
 func (world *World) printWorld() {
-	fmt.Println("State of the World")
-	// for x := range world.worldMap {
-	// for y := range world.worldMap[x] {
-	// world.worldMap[x][y].print()
-	// }
-	// }
-	world.worldMap[0][0].print()
-	world.worldMap[5][5].print()
-	for b := range world.bots {
-		world.bots[b].print()
+	for x := range world.worldMap {
+		for y := range world.worldMap[x] {
+			if world.worldMap[x][y].food > 0 {
+				world.worldMap[x][y].print()
+			}
+		}
 	}
+	world.worldMap[0][0].print()
+	// for b := range world.bots {
+	// world.bots[b].print()
+	// }
 }
 
 func (world *World) execute(rounds int) bool {
@@ -68,83 +48,49 @@ func (world *World) execute(rounds int) bool {
 	return false
 }
 
-func NewWorld(size_x, size_y, botCount int) *World {
-	world := new(World)
-
+func (world *World) setup_locations(size_x, size_y int) {
 	worldMap := make([][]Location, size_x)
-
+	world.worldMap = worldMap
 	for x := range worldMap {
 		worldMap[x] = make([]Location, size_y)
 	}
 
-	var nx = 0
-	var ny = 0
 	for x := range worldMap {
 		for y := range worldMap[x] {
 			var location = &worldMap[x][y]
-			location.x = x
-			location.y = y
-			location.nest = x == 0 && y == 0
-			location.lock = sync.RWMutex{}
-			location.signatures = map[string]int{"food": math.MaxInt64, "search": math.MaxInt64}
-			var neighbors = &location.neighbors
-			for n := range neighbors {
-
-				switch n {
-				case 0:
-					nx = x
-					ny = y + 1
-				case 1:
-					nx = x + 1
-					ny = y + 1
-				case 2:
-					nx = x + 1
-					ny = y
-				case 3:
-					nx = x + 1
-					ny = y - 1
-				case 4:
-					nx = x
-					ny = y - 1
-				case 5:
-					nx = x - 1
-					ny = y - 1
-				case 6:
-					nx = x - 1
-					ny = y
-				case 7:
-					nx = x - 1
-					ny = y + 1
-				}
-
-				nx = nx % size_x
-				ny = ny % size_y
-
-				if nx < 0 {
-					nx = size_x + nx
-				}
-
-				if ny < 0 {
-					ny = size_y + ny
-				}
-
-				neighbors[n] = &worldMap[nx][ny]
-			}
+			location.setup(worldMap, size_x, size_y, x, y)
 		}
 	}
+}
 
+func (world *World) setup_bots(botCount int) {
 	bots := make([]Bot, botCount)
+	world.bots = bots
 	for b := range bots {
-		bots[b].currentLocation = &worldMap[0][0]
+		bots[b].currentLocation = &world.worldMap[0][0]
 		bots[b].direction = Direction{rand.Intn(8)}
 		bots[b].signal = make(chan int)
 		bots[b].wait = make(chan int)
 		bots[b].quit = make(chan int)
 	}
+}
+func (world *World) setup_environment() {
+	for i := 0; i < 3; i++ {
+		rand_x := rand.Intn(len(world.worldMap))
+		rand_y := rand.Intn(len(world.worldMap))
+		world.worldMap[rand_x][rand_y].food += 50
 
-	worldMap[5][5].food = 10
+	}
 
-	world.worldMap = worldMap
-	world.bots = bots
+	world.worldMap[0][0].nest = true
+}
+
+func NewWorld(size_x, size_y, botCount int) *World {
+	world := new(World)
+	world.setup_locations(size_x, size_y)
+	world.setup_bots(botCount)
+
+	world.setup_environment()
+
 	return world
 }
