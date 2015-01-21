@@ -1,13 +1,13 @@
 package main
 
 import (
-	// "fmt"
 	"math/rand"
+	"sync"
 )
 
 type World struct {
 	WorldMap [][]Location `json:"WorldMap"`
-	Bots     []Bot        `json:"Bots"`
+	Bots     []Bot        `json:-`
 }
 
 func (world *World) printWorld() {
@@ -24,21 +24,38 @@ func (world *World) printWorld() {
 	// }
 }
 
-func (world *World) execute(rounds int) bool {
+func (world *World) kickoff_bots() {
 	for b := range world.Bots {
 		go world.Bots[b].run()
 	}
+}
+
+func (world *World) run_round() bool {
+	for b := range world.Bots {
+		world.Bots[b].signal <- 1
+	}
+	for b := range world.Bots {
+		<-world.Bots[b].wait
+	}
+	if world.WorldMap[0][0].Food >= 100 {
+		for b := range world.Bots {
+			world.Bots[b].quit <- 1
+		}
+		return true
+	}
+	return false
+}
+
+func (world *World) execute(rounds int, lock sync.Mutex) bool {
+	lock.Lock()
+	world.kickoff_bots()
+	lock.Unlock()
+
 	for r := 0; r < rounds; r++ {
-		for b := range world.Bots {
-			world.Bots[b].signal <- 1
-		}
-		for b := range world.Bots {
-			<-world.Bots[b].wait
-		}
-		if world.WorldMap[0][0].Food >= 100 {
-			for b := range world.Bots {
-				world.Bots[b].quit <- 1
-			}
+		lock.Lock()
+		complete := world.run_round()
+		lock.Unlock()
+		if complete {
 			return true
 		}
 	}

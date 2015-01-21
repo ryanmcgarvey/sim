@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/ant0ine/go-json-rest/rest"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -26,7 +28,17 @@ func api() {
 	}
 	err := handler.SetRoutes(
 		&rest.Route{"GET", "/world", func(w rest.ResponseWriter, req *rest.Request) {
-			w.WriteJson(world)
+			lock.Lock()
+			start := time.Now()
+			resp, err := json.Marshal(*world)
+			if err != nil {
+				fmt.Println("error:", err)
+			}
+			elapsed := time.Since(start)
+			lock.Unlock()
+			w.WriteJson(string(resp))
+			fmt.Print(resp)
+			fmt.Printf("JSON took %s", elapsed)
 		}},
 	)
 	if err != nil {
@@ -41,9 +53,11 @@ func api() {
 
 var (
 	world *World
+	lock  sync.Mutex
 )
 
 func main() {
+	lock = sync.Mutex{}
 	go api()
 	for {
 		wins := 0
@@ -51,7 +65,7 @@ func main() {
 		for i := 0; i < total; i++ {
 			start := time.Now()
 			world = NewWorld(500, 500, 100)
-			success := world.execute(100000)
+			success := world.execute(100000, lock)
 			elapsed := time.Since(start)
 
 			if success {
@@ -64,3 +78,21 @@ func main() {
 		fmt.Printf("%d wins of %d tries\n", wins, total)
 	}
 }
+
+// func main() {
+// type ColorGroup struct {
+// ID     int
+// Name   string
+// Colors []string
+// }
+// group := ColorGroup{
+// ID:     1,
+// Name:   "Reds",
+// Colors: []string{"Crimson", "Red", "Ruby", "Maroon"},
+// }
+// b, err := json.Marshal(group)
+// if err != nil {
+// fmt.Println("error:", err)
+// }
+// os.Stdout.Write(b)
+// }

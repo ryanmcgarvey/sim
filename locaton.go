@@ -7,13 +7,13 @@ import (
 )
 
 type Location struct {
-	Signatures map[string]int `json:"Signatures"`
-	Food       int            `json:"Food"`
-	X          int            `json:"X"`
-	Y          int            `json:"Y"`
-	Nest       bool           `json:"Nest"`
-	lock       sync.RWMutex
-	neighbors  [8]*Location
+	Signatures map[string]int
+	Food       int
+	X          int
+	Y          int
+	Nest       bool
+	lock       sync.RWMutex `json:-`
+	neighbors  [8]*Location `json:-`
 }
 
 func (loc *Location) print() {
