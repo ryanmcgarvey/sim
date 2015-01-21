@@ -43,9 +43,9 @@ func (bot *Bot) step() {
 
 func (bot *Bot) findFood() {
 	if bot.food > 0 {
-		if bot.currentLocation.nest {
+		if bot.currentLocation.Nest {
 			bot.currentLocation.lock.Lock()
-			bot.currentLocation.food += bot.food
+			bot.currentLocation.Food += bot.food
 			bot.currentLocation.lock.Unlock()
 			// fmt.Printf("Food NEST in %d steps\n", bot.steps)
 			bot.food = 0
@@ -55,14 +55,14 @@ func (bot *Bot) findFood() {
 		return
 	}
 
-	if !bot.currentLocation.nest {
+	if !bot.currentLocation.Nest {
 		bot.currentLocation.lock.RLock()
-		loc_food := bot.currentLocation.food
+		loc_food := bot.currentLocation.Food
 		bot.currentLocation.lock.RUnlock()
 
 		if loc_food > 0 {
 			bot.currentLocation.lock.Lock()
-			bot.currentLocation.food--
+			bot.currentLocation.Food--
 			bot.currentLocation.lock.Unlock()
 			// fmt.Printf("Found FOOD in %d steps\n", bot.steps)
 			bot.food++
@@ -106,8 +106,8 @@ func (bot *Bot) min_signal(signal string) int {
 	min := moves[0]
 
 	for l := 1; l < len(moves); l++ {
-		min_val := min.signatures[signal]
-		pot_min_val := moves[l].signatures[signal]
+		min_val := min.Signatures[signal]
+		pot_min_val := moves[l].Signatures[signal]
 		if min_val > pot_min_val {
 			min = moves[l]
 			lowest_directions = []int{l}
@@ -136,13 +136,13 @@ func (bot *Bot) move() {
 func (bot *Bot) leaveScent() {
 	var loc = bot.currentLocation
 	if bot.food > 0 {
-		if loc.signatures["food"] > bot.steps {
-			loc.signatures["food"] = bot.steps
+		if loc.Signatures["food"] > bot.steps {
+			loc.Signatures["food"] = bot.steps
 		}
 		return
 	}
-	if loc.signatures["search"] > bot.steps {
-		loc.signatures["search"] = bot.steps
+	if loc.Signatures["search"] > bot.steps {
+		loc.Signatures["search"] = bot.steps
 	}
 }
 

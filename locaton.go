@@ -7,17 +7,17 @@ import (
 )
 
 type Location struct {
-	signatures map[string]int
-	neighbors  [8]*Location
-	food       int
-	x          int
-	y          int
+	Signatures map[string]int `json:"Signatures"`
+	Food       int            `json:"Food"`
+	X          int            `json:"X"`
+	Y          int            `json:"Y"`
+	Nest       bool           `json:"Nest"`
 	lock       sync.RWMutex
-	nest       bool
+	neighbors  [8]*Location
 }
 
 func (loc *Location) print() {
-	fmt.Println(loc.x, loc.y, loc.food, loc.signatures, loc.nest)
+	fmt.Println(loc.X, loc.Y, loc.Food, loc.Signatures, loc.Nest)
 }
 
 func (location *Location) neighbor_for(direction *Direction) *Location {
@@ -28,13 +28,13 @@ type Direction struct {
 	degree int
 }
 
-func (location *Location) setup(worldMap [][]Location, size_x, size_y, x, y int) {
+func (location *Location) setup(WorldMap [][]Location, size_x, size_y, x, y int) {
 	nx := 0
 	ny := 0
-	location.x = x
-	location.y = y
+	location.X = x
+	location.Y = y
 	location.lock = sync.RWMutex{}
-	location.signatures = map[string]int{"food": math.MaxInt64, "search": math.MaxInt64}
+	location.Signatures = map[string]int{"food": math.MaxInt64, "search": math.MaxInt64}
 	var neighbors = &location.neighbors
 	for n := range neighbors {
 
@@ -76,6 +76,6 @@ func (location *Location) setup(worldMap [][]Location, size_x, size_y, x, y int)
 			ny = size_y + ny
 		}
 
-		neighbors[n] = &worldMap[nx][ny]
+		neighbors[n] = &WorldMap[nx][ny]
 	}
 }
